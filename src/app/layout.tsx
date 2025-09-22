@@ -8,7 +8,7 @@ import { Toaster } from 'react-hot-toast';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'RoadmapAI - Futuristic Learning Roadmap',
+  title: 'Dev Roadmap',
   description: 'An interactive, AI-powered learning roadmap with mind maps, progress tracking, and gamification.',
   keywords: 'learning, roadmap, education, AI, mind map, progress tracking',
   authors: [{ name: 'RoadmapAI Team' }],
