@@ -225,9 +225,9 @@ export async function signupUser(email: string, password: string, name: string):
     return { token, user: newUser };
   } catch (error) {
     console.error('Error in signupUser:', {
-      name: error?.name,
-      message: error?.message,
-      stack: error?.stack,
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : '',
       error: error
     });
     throw error; // Re-throw to be handled by the caller
