@@ -1,0 +1,478 @@
+'use client';
+
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Brain, Search, Plus, Star, TrendingUp, X } from 'lucide-react';
+import CourseCard from './CourseCard';
+import HomeHeader from './HomeHeader';
+import { courses, getCoursesByCategory } from '@/data/coursesData';
+import { Course } from '@/data/coursesData';
+
+interface HomePageProps {
+  onCourseSelect: (courseId: string) => void;
+}
+
+export default function HomePage({ onCourseSelect }: HomePageProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showCreateRoadmap, setShowCreateRoadmap] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const categories = [
+    { id: 'all', name: 'All Roadmaps', count: courses.length },
+    { id: 'role-based', name: 'Role-based Roadmaps', count: getCoursesByCategory('role-based').length },
+    { id: 'skill-based', name: 'Skill-based Roadmaps', count: getCoursesByCategory('skill-based').length },
+    { id: 'project-ideas', name: 'Project Ideas', count: getCoursesByCategory('project-ideas').length },
+    { id: 'best-practices', name: 'Best Practices', count: getCoursesByCategory('best-practices').length },
+  ];
+
+  const filteredCourses = courses.filter(course => {
+    const searchLower = searchTerm.toLowerCase().trim();
+    const matchesSearch = searchLower === '' || 
+                         course.title.toLowerCase().includes(searchLower) ||
+                         course.description.toLowerCase().includes(searchLower) ||
+                         course.category.toLowerCase().includes(searchLower) ||
+                         course.difficulty.toLowerCase().includes(searchLower);
+    const matchesCategory = selectedCategory === 'all' || course.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const popularCourses = courses.filter(course => course.isPopular);
+  const newCourses = courses.filter(course => course.isNew);
+
+  // Search suggestions
+  const searchSuggestions = [
+    'Frontend Developer',
+    'Backend Developer',
+    'JavaScript',
+    'React',
+    'Python',
+    'DevOps',
+    'Full Stack',
+    'Node.js',
+    'AWS',
+    'Docker'
+  ].filter(suggestion => 
+    suggestion.toLowerCase().includes(searchTerm.toLowerCase()) && 
+    searchTerm.length > 0
+  );
+
+  // Group courses by category for search results
+  const groupedCourses = searchTerm ? filteredCourses.reduce((acc, course) => {
+    if (!acc[course.category]) {
+      acc[course.category] = [];
+    }
+    acc[course.category].push(course);
+    return acc;
+  }, {} as Record<string, typeof filteredCourses>) : null;
+
+  return (
+    <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white transition-colors duration-300">
+      <HomeHeader />
+      
+      {/* Background Effects */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl floating-animation" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl floating-animation" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl floating-animation" style={{ animationDelay: '4s' }} />
+      </div>
+
+      <div className="relative z-10 pt-20">
+        {/* Search Results Section */}
+        {searchTerm && filteredCourses.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-7xl mx-auto px-4 py-8"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-black dark:text-white">
+                Search Results for "{searchTerm}"
+              </h2>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                {filteredCourses.length} result{filteredCourses.length !== 1 ? 's' : ''} found
+              </span>
+            </div>
+            
+            {Object.entries(groupedCourses || {}).map(([category, categoryCourses]) => (
+              <div key={category} className="mb-8">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 capitalize">
+                  {category.replace('-', ' ')}
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {categoryCourses.map((course) => (
+                    <CourseCard
+                      key={course.id}
+                      course={course}
+                      onClick={onCourseSelect}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+            
+            <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => setSearchTerm('')}
+                className="text-blue-600 dark:text-blue-400 hover:underline flex items-center mx-auto"
+              >
+                <X className="h-4 w-4 mr-1" /> Clear search
+              </button>
+            </div>
+          </motion.div>
+        )}
+        
+        {/* Hero Section - Only show when not searching */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: searchTerm ? 0.5 : 1, y: 0 }}
+          className={`text-center py-16 px-4 transition-all duration-300 ${searchTerm ? 'pointer-events-none' : ''}`}
+          style={searchTerm ? { filter: 'blur(2px)', transform: 'scale(0.98)' } : {}}
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+            className="inline-flex items-center space-x-2 mb-6"
+          >
+            <Brain className="h-12 w-12 text-blue-400" />
+            <h1 className="text-4xl md:text-6xl font-bold gradient-text text-black dark:text-white">
+              Developer Roadmaps
+            </h1>
+          </motion.div>
+          
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="text-xl text-gray-700 dark:text-gray-300 mb-8 max-w-3xl mx-auto"
+          >
+            RoadmapAI is a community effort to create roadmaps, guides and other educational content 
+            to help guide developers in picking up a path and guide their learnings.
+          </motion.p>
+
+          {/* Search Bar */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="max-w-2xl mx-auto mb-8"
+          >
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search roadmaps by name, description, category, or difficulty..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setShowSuggestions(e.target.value.length > 0);
+                }}
+                onFocus={() => setShowSuggestions(searchTerm.length > 0)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                className="w-full pl-12 pr-12 py-4 bg-white/80 dark:bg-black/10 border border-gray-200 dark:border-white/20 rounded-2xl text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent backdrop-blur-sm"
+              />
+              {searchTerm && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => {
+                    setSearchTerm('');
+                    setShowSuggestions(false);
+                  }}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
+                  title="Clear search"
+                >
+                  <X className="h-5 w-5" />
+                </motion.button>
+              )}
+              
+              {/* Search Suggestions */}
+              {showSuggestions && searchSuggestions.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute top-full left-0 right-0 mt-2 bg-white/95 dark:bg-black/90 backdrop-blur-md border border-gray-200 dark:border-white/20 rounded-2xl overflow-hidden z-50 shadow-lg"
+                >
+                  {searchSuggestions.slice(0, 5).map((suggestion, index) => (
+                    <motion.button
+                      key={index}
+                      whileHover={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
+                      onClick={() => {
+                        setSearchTerm(suggestion);
+                        setShowSuggestions(false);
+                      }}
+                      className="w-full px-4 py-3 text-left text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors flex items-center space-x-2"
+                    >
+                      <Search className="h-4 w-4 text-gray-400" />
+                      <span>{suggestion}</span>
+                    </motion.button>
+                  ))}
+                </motion.div>
+              )}
+            </div>
+            {searchTerm && !filteredCourses.length && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-6 text-center"
+              >
+                <p className="text-gray-600 dark:text-gray-300">
+                  No roadmaps found matching "{searchTerm}"
+                </p>
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="mt-2 text-blue-600 dark:text-blue-400 hover:underline flex items-center mx-auto"
+                >
+                  <X className="h-4 w-4 mr-1" /> Clear search
+                </button>
+              </motion.div>
+            )}
+          </motion.div>
+        </motion.div>
+
+        {/* Category Filter */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="max-w-7xl mx-auto px-4 mb-8"
+        >
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {categories.map((category) => (
+              <motion.button
+                key={category.id}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setSelectedCategory(category.id)}
+                className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                  selectedCategory === category.id
+                    ? 'bg-blue-500/20 text-blue-400 border border-blue-400/30'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10'
+                }`}
+              >
+                {category.name} ({category.count})
+              </motion.button>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Popular Courses - Only show when not searching */}
+        {selectedCategory === 'all' && !searchTerm && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.0 }}
+            className="max-w-7xl mx-auto px-4 mb-12"
+          >
+            <div className="flex items-center space-x-2 mb-6">
+              <TrendingUp className="h-6 w-6 text-yellow-400" />
+              <h2 className="text-2xl font-bold text-black dark:text-white">Popular Roadmaps</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {popularCourses.slice(0, 6).map((course) => (
+                <CourseCard
+                  key={course.id}
+                  course={course}
+                  onClick={onCourseSelect}
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* New Courses - Only show when not searching */}
+        {selectedCategory === 'all' && newCourses.length > 0 && !searchTerm && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.1 }}
+            className="max-w-7xl mx-auto px-4 mb-12"
+          >
+            <div className="flex items-center space-x-2 mb-6">
+              <Star className="h-6 w-6 text-green-400" />
+              <h2 className="text-2xl font-bold text-black dark:text-white">New Roadmaps</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {newCourses.map((course) => (
+                <CourseCard
+                  key={course.id}
+                  course={course}
+                  onClick={onCourseSelect}
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* All Courses - Only show when not searching */}
+        {!searchTerm && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.2 }}
+            className="max-w-7xl mx-auto px-4 mb-12"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-black dark:text-white">
+                {selectedCategory === 'all' ? 'All Roadmaps' : categories.find(c => c.id === selectedCategory)?.name}
+              </h2>
+              <div className="text-gray-400">
+                {filteredCourses.length} roadmap{filteredCourses.length !== 1 ? 's' : ''}
+              </div>
+            </div>
+            
+            {filteredCourses.length === 0 ? (
+              <div className="text-center py-12">
+                <Search className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-black dark:text-white mb-2">No roadmaps found</h3>
+                <p className="text-gray-400">Try adjusting your filter criteria</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredCourses.map((course) => (
+                  <CourseCard
+                    key={course.id}
+                    course={course}
+                    onClick={onCourseSelect}
+                  />
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Create Your Own Roadmap - Only show when not searching */}
+        {!searchTerm && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.3 }}
+            className="max-w-7xl mx-auto px-4 mb-12"
+          >
+            <div className="text-center">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowCreateRoadmap(true)}
+                className="inline-flex items-center space-x-2 px-8 py-4 bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-400/30 rounded-2xl text-black dark:text-white hover:from-blue-500/30 hover:to-purple-500/30 transition-all duration-200"
+              >
+                <Plus className="h-5 w-5" />
+                <span className="font-medium">
+                  {selectedCategory === 'project-ideas' ? 'Create your own Project Idea' : 'Create your own Roadmap'}
+                </span>
+              </motion.button>
+              {showCreateRoadmap && (
+                <div className="mt-6 p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl max-w-xl mx-auto shadow-lg">
+                  <h3 className="text-xl font-bold text-black dark:text-white mb-4">
+                    {selectedCategory === 'project-ideas' ? 'Create Your Own Project Idea' : 'Create Your Own Roadmap'}
+                  </h3>
+                  <form
+                    onSubmit={e => {
+                      e.preventDefault();
+                      // For now, just log the data
+                      console.log({
+                        type: selectedCategory === 'project-ideas' ? 'project-idea' : 'roadmap',
+                        title: (e.target as any).title.value,
+                        description: (e.target as any).description.value,
+                        steps: (e.target as any).steps?.value || undefined,
+                      });
+                      setShowCreateRoadmap(false);
+                    }}
+                  >
+                    <input
+                      name="title"
+                      type="text"
+                      required
+                      placeholder={selectedCategory === 'project-ideas' ? 'Project Idea Title' : 'Roadmap Title'}
+                      className="mb-3 w-full px-4 py-2 rounded-lg bg-white dark:bg-gray-700 text-black dark:text-white border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    />
+                    <textarea
+                      name="description"
+                      required
+                      placeholder={selectedCategory === 'project-ideas' ? 'Describe your project idea, its goals, technologies, and any requirements.' : 'Describe your custom roadmap, its purpose, and the steps involved.'}
+                      className="mb-3 w-full px-4 py-2 rounded-lg bg-white dark:bg-gray-700 text-black dark:text-white border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    />
+                    {selectedCategory !== 'project-ideas' && (
+                      <textarea
+                        name="steps"
+                        placeholder="List the steps for your roadmap (one per line)"
+                        className="mb-3 w-full px-4 py-2 rounded-lg bg-white dark:bg-gray-700 text-black dark:text-white border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      />
+                    )}
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        type="button"
+                        className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-black dark:text-white font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+                        onClick={() => setShowCreateRoadmap(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-2 rounded-lg bg-blue-500 text-white font-medium hover:bg-blue-600 transition"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Community Stats - Only show when not searching */}
+        {!searchTerm && (
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.4 }}
+            className="max-w-7xl mx-auto px-4 py-16"
+          >
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-black dark:text-white mb-4">Join the Community</h2>
+              <p className="text-gray-600 dark:text-gray-300 text-lg">
+                RoadmapAI is visited by thousands of developers every month
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[
+                { label: 'GitHub Stars', value: '10K+', icon: '⭐' },
+                { label: 'Registered Users', value: '50K+', icon: '👥' },
+                { label: 'Roadmaps', value: '50+', icon: '🗺️' }
+              ].map((stat, index) => (
+                <motion.div
+                  key={index}
+                  whileHover={{ scale: 1.05 }}
+                  className="text-center p-6 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700"
+                >
+                  <div className="text-4xl mb-2">{stat.icon}</div>
+                  <div className="text-3xl font-bold text-black dark:text-white mb-2">{stat.value}</div>
+                  <div className="text-gray-600 dark:text-gray-300">{stat.label}</div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </div>
+      
+      {/* Footer */}
+      <footer className="w-full bg-white/80 dark:bg-gray-900/80 py-6 mt-12 border-t border-gray-200 dark:border-gray-800 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between text-gray-600 dark:text-gray-300 text-sm">
+          <div>
+            © {new Date().getFullYear()} RoadmapAI
+          </div>
+          <div className="flex items-center gap-4 mt-2 md:mt-0">
+            <a href="https://github.com/yourusername/roadmap-ai" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">GitHub</a>
+            <a href="https://twitter.com/yourusername" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Twitter</a>
+            <a href="mailto:contact@roadmapai.com" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Contact</a>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
